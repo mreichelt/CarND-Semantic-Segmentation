@@ -24,16 +24,23 @@ def load_vgg(sess, vgg_path):
     :param vgg_path: Path to vgg folder, containing "variables/" and "saved_model.pb"
     :return: Tuple of Tensors from VGG model (image_input, keep_prob, layer3_out, layer4_out, layer7_out)
     """
-    # TODO: Implement function
-    #   Use tf.saved_model.loader.load to load the model and weights
     vgg_tag = 'vgg16'
+    tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
+
     vgg_input_tensor_name = 'image_input:0'
     vgg_keep_prob_tensor_name = 'keep_prob:0'
     vgg_layer3_out_tensor_name = 'layer3_out:0'
     vgg_layer4_out_tensor_name = 'layer4_out:0'
     vgg_layer7_out_tensor_name = 'layer7_out:0'
 
-    return None, None, None, None, None
+    graph = tf.get_default_graph()
+    w1 = graph.get_tensor_by_name(vgg_input_tensor_name)
+    keep = graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
+    layer3 = graph.get_tensor_by_name(vgg_layer3_out_tensor_name)
+    layer4 = graph.get_tensor_by_name(vgg_layer4_out_tensor_name)
+    layer7 = graph.get_tensor_by_name(vgg_layer7_out_tensor_name)
+
+    return w1, keep, layer3, layer4, layer7
 
 
 tests.test_load_vgg(load_vgg, tf)
@@ -48,8 +55,31 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    # TODO: Implement function
-    return None
+
+    # define some helper functions here so the code is more readable
+    def conv1x1(input):
+        return tf.layers.conv2d(input, num_classes, 1, padding='same',
+                                kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    def upsample(input, factor):
+        return tf.layers.conv2d_transpose(input, num_classes, factor * 2, factor, padding='same',
+                                          kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+    # Decoder layer 7
+    x = conv1x1(vgg_layer7_out)
+
+    # Decoder layer 4 with skip connection
+    x = tf.add(
+        upsample(x, factor=2),
+        conv1x1(vgg_layer4_out))
+
+    # Decoder layer 3 with skip connection
+    x = tf.add(
+        upsample(x, factor=2),
+        conv1x1(vgg_layer3_out))
+
+    # Final upsampling of decoder
+    return upsample(x, factor=8)
 
 
 tests.test_layers(layers)
