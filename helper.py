@@ -127,9 +127,9 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
         yield os.path.basename(image_file), np.array(street_im)
 
 
-def save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image):
+def save_inference_samples(runs_dir, timestamp, data_dir, sess, image_shape, logits, keep_prob, input_image):
     # Make folder for current run
-    output_dir = os.path.join(runs_dir, str(time.time()))
+    output_dir = os.path.join(runs_dir, timestamp)
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir)
