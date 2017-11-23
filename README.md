@@ -1,4 +1,70 @@
 # Semantic Segmentation
+
+In this project I used a fully convolutional network (FCN-8) to perform semantic segmentation.
+
+## Architecture
+
+To get going I implemented the skeleton methods provided by Udacity. I built a FCN-8 architecture
+as described in [this paper](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf):
+
+![FCN-8](001_fcn8.png)
+
+This network uses a VGG-16 network as part of the encoder. In contrast to regular convolutional
+networks that only output labels based on the whole image (like if it pictures a cat or a dog),
+a fully convolutional network like this can preserve the information *where* the cat or the dog
+is by using _1x1 convolutions_. Combined with the technique of _upsampling_, this enables the
+network to output the label information on the same size of the input image.
+
+Here, we use the FCN-8 network to classify pictures of streets and want to separate street-pixels
+from non-street-pixels. We will also use another technique described in the FCN-8 architecture:
+The use of _skip connections_. Usually the details of the original image are lost during the encoding
+process. As a result, the output of the decoder will loose a lot of details of the original picture, as
+can be seen in the paper (FCN-32 architecture has no skip connections).
+The FCN-8 network uses two skip connections.
+
+The implementation of the full FCN-8 network (encoder + decoder) can be seen in [main.py](main.py#L21-L93).
+I want to point out that the code could be greatly simplified by adding two lambda methods. Here the decoder part
+including 1x1 convolutions and skip connections:
+
+```python
+# define some helper functions here so the code is more readable
+def conv1x1(input):
+    return tf.layers.conv2d(input, num_classes, 1, padding='same',
+                            kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+def upsample(input, factor):
+    return tf.layers.conv2d_transpose(input, num_classes, factor * 2, factor, padding='same',
+                                      kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+
+# create 1x1 convolutions of desired VGG layers for later use
+layer7_1x1 = conv1x1(vgg_layer7_out)
+layer4_1x1 = conv1x1(vgg_layer4_out)
+layer3_1x1 = conv1x1(vgg_layer3_out)
+
+# Decoder layer 7
+x = layer7_1x1
+
+# Decoder layer 4 with skip connection
+x = tf.add(
+    upsample(x, factor=2),
+    layer4_1x1)
+
+# Decoder layer 3 with skip connection
+x = tf.add(
+    upsample(x, factor=2),
+    layer3_1x1)
+
+# Final upsampling of decoder
+return upsample(x, factor=8)
+```
+
+## Training
+
+TODO
+
+
+---
+
 ### Introduction
 In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
 
