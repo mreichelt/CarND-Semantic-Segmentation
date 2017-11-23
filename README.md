@@ -58,9 +58,22 @@ x = tf.add(
 return upsample(x, factor=8)
 ```
 
+In `main.py` I also printed the shapes of the layers, e.g. here the VGG layers,
+their 1x1 convolutions and the final output shape:
+
+```
+2017-11-23 13:19:58.824994: I tensorflow/core/kernels/logging_ops.cc:79] VGG layers 7, 4, 3: [4 5 18 4096][4 10 36 512][4 20 72 256]
+2017-11-23 13:19:58.825041: I tensorflow/core/kernels/logging_ops.cc:79] 1x1 of VGG layers 7, 4, 3: [4 5 18 2][4 10 36 2][4 20 72 2]
+2017-11-23 13:19:58.837856: I tensorflow/core/kernels/logging_ops.cc:79] Final output: [4 160 576 2]
+```
+
+Here we can observe that the 1x1 convolutions indeed preserve the spatial information,
+while also generating output for our 2 labels. The final output image shape is `576x160` - the same
+as the input image shape.
+
 ## Training
 
-TODO
+
 
 
 ---
