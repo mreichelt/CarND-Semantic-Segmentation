@@ -73,7 +73,60 @@ as the input image shape.
 
 ## Training
 
+I trained and tested the model on the [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php).
+I used an AdamOptimizer with a learning rate of `0.001` minimizing the cross entropy, as can be seen in the [code](main.py#L109-L112):
 
+```python
+logits = tf.reshape(nn_last_layer, (-1, num_classes))
+labels = tf.reshape(correct_label, (-1, num_classes))
+cross_entropy_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cross_entropy_loss)
+```
+
+First I tried to train 1 epoch on my local machine without GPU to verify it was working.
+Although the loss usually decreased, the initial result was not what I expected:
+
+![Training 1 epoch](002_1epoch.png)
+
+I decided that the data was not enough for my neural net to learn the concept of a street, so I decided
+to give it one more try on my local machine with 10 epochs:
+
+![Training 10 epochs](003_10epochs.png)
+
+This looked much better, but it still made some larger errors on some of the images:
+
+![Training 10 epochs, not so good result](004_10epochs2.png)
+
+Finally, I decided to fit the whole training set 42 times. For that I could have run it on my local machine
+over night. Instead, I decided to launch an AWS spot instance with a Tegra K60 GPU. This machine
+could train the model in minutes. Here are some of the [final results](last_run):
+
+![42 epochs](005_42epochs1.png)
+![42 epochs](005_42epochs2.png)
+![42 epochs](005_42epochs3.png)
+![42 epochs](005_42epochs4.png)
+![42 epochs](005_42epochs5.png)
+
+As you can see the results improved a lot. The network even learned to recognize streets
+where the street was covered by shadows.
+
+## Discussion
+
+It is astounding to see that fully convolutional networks can learn to differentiate
+different parts of images and locate them. I really liked that the network learned
+what a street is based on only a relatively small dataset of less than 100 images,
+although I had to increase the number of epochs so the model could actually learn.
+
+What is even more cool is that the same principle should work for cars, pedestrians,
+bikes, traffic lights, signs and more. We only need to manually label some data so we can pass
+it to the network. An awesome tool for this is the coloring website by comma.ai:
+http://commacoloring.herokuapp.com/
+
+I also learned from this project that my local machine is much too slow for learning
+deep neural nets, and that even a Tegra K60 GPU takes some time to learn.
+It will be interesting to see how quick we will be able to learn neural nets in the
+future using a combination of multiple graphic cards, or even better on dedicated
+hardware like the new Tensorflow Processing Units (TPUs)!
 
 
 ---
